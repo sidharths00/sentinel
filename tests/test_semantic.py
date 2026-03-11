@@ -1,5 +1,4 @@
 # tests/test_semantic.py
-import pytest
 from unittest.mock import AsyncMock, MagicMock
 
 
@@ -15,7 +14,9 @@ async def test_anthropic_checker_parses_response():
 
     mock_client = MagicMock()
     mock_message = MagicMock()
-    mock_message.content = [MagicMock(text='{"consistent": true, "confidence": 0.92, "reason": "Matches"}')]
+    mock_message.content = [
+        MagicMock(text='{"consistent": true, "confidence": 0.92, "reason": "Matches"}')
+    ]
     mock_client.messages.create = MagicMock(return_value=mock_message)
 
     checker = AnthropicSemanticChecker(api_key="test-key")
@@ -35,7 +36,11 @@ async def test_anthropic_checker_handles_off_intent():
 
     mock_client = MagicMock()
     mock_message = MagicMock()
-    mock_message.content = [MagicMock(text='{"consistent": false, "confidence": 0.95, "reason": "Unrelated to declared intent"}')]
+    off_intent_json = (
+        '{"consistent": false, "confidence": 0.95,'
+        ' "reason": "Unrelated to declared intent"}'
+    )
+    mock_message.content = [MagicMock(text=off_intent_json)]
     mock_client.messages.create = MagicMock(return_value=mock_message)
 
     checker = AnthropicSemanticChecker(api_key="test-key")

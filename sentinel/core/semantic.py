@@ -3,8 +3,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Callable, Coroutine
 from dataclasses import dataclass
-from typing import Any, Callable, Coroutine
+from typing import Any
 
 SEMANTIC_CHECK_PROMPT = """You are a policy enforcement system.
 
@@ -72,7 +73,9 @@ class AnthropicSemanticChecker:
             )
         except Exception:
             # Fail open: if semantic check errors, allow (rules already passed)
-            return SemanticResult(consistent=True, confidence=0.0, reason="semantic check unavailable")
+            return SemanticResult(
+                consistent=True, confidence=0.0, reason="semantic check unavailable"
+            )
 
 
 class CachedSemanticChecker:
@@ -83,7 +86,11 @@ class CachedSemanticChecker:
         self._cache: dict[str, SemanticResult] = {}
 
     def _cache_key(self, tool_name: str, params: dict[str, Any], intent: str) -> str:
-        payload = json.dumps({"tool": tool_name, "params": params, "intent": intent}, sort_keys=True, default=str)
+        payload = json.dumps(
+            {"tool": tool_name, "params": params, "intent": intent},
+            sort_keys=True,
+            default=str,
+        )
         return hashlib.sha256(payload.encode()).hexdigest()
 
     async def check(self, tool_name: str, params: dict[str, Any], intent: str) -> SemanticResult:

@@ -2,7 +2,8 @@
 from __future__ import annotations
 
 import os
-from typing import Any, Callable, Coroutine
+from collections.abc import Callable, Coroutine
+from typing import Any
 
 from dotenv import load_dotenv
 
@@ -23,7 +24,7 @@ class SentinelConfig:
         default_agent_id: str = "default",
     ) -> None:
         self.semantic_checker = semantic_checker
-        self.db_path = db_path or os.getenv("SENTINEL_DB_PATH", "sentinel_audit.db")
+        self.db_path: str = db_path or os.getenv("SENTINEL_DB_PATH") or "sentinel_audit.db"
         self.default_agent_id = default_agent_id
         self._store: Any = None
         self._logger: Any = None
@@ -45,8 +46,8 @@ class SentinelConfig:
     async def _ensure_initialized(self) -> None:
         if self._initialized:
             return
-        from sentinel.audit.store import AuditStore
         from sentinel.audit.logger import AuditLogger
+        from sentinel.audit.store import AuditStore
         from sentinel.core.engine import PolicyEngine
 
         self._store = AuditStore(db_path=self.db_path)

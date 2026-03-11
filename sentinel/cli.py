@@ -2,8 +2,7 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timezone, timedelta
-from typing import Optional
+from datetime import datetime, timedelta, timezone
 
 import click
 
@@ -19,7 +18,7 @@ def cli() -> None:
 @click.option("--outcome", default=None, type=click.Choice(["pass", "block", "modify"]))
 @click.option("--limit", default=50, help="Max entries to show")
 @click.option("--db", default="sentinel_audit.db", help="Path to SQLite DB")
-def audit(agent_id: Optional[str], since: str, outcome: Optional[str], limit: int, db: str) -> None:
+def audit(agent_id: str | None, since: str, outcome: str | None, limit: int, db: str) -> None:
     """Display audit log entries."""
     asyncio.run(_audit(agent_id=agent_id, since=since, outcome=outcome, limit=limit, db=db))
 
@@ -35,14 +34,15 @@ def _parse_since(since: str) -> datetime:
 
 
 async def _audit(
-    agent_id: Optional[str],
+    agent_id: str | None,
     since: str,
-    outcome: Optional[str],
+    outcome: str | None,
     limit: int,
     db: str,
 ) -> None:
     from rich.console import Console
     from rich.table import Table
+
     from sentinel.audit.store import AuditStore
 
     store = AuditStore(db_path=db)

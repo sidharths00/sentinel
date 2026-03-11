@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
+from typing import Any, cast
 
 from fastapi import APIRouter, Query
 
@@ -42,4 +42,4 @@ async def get_summary(
 ) -> dict[str, Any]:
     store = get_store()
     summary = await store.get_summary(agent_id=agent_id, since=since)
-    return summary.model_dump()
+    return cast(dict[str, Any], summary.model_dump())

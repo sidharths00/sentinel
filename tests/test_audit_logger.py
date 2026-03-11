@@ -1,6 +1,8 @@
 # tests/test_audit_logger.py
-import pytest
 from unittest.mock import AsyncMock
+
+import pytest
+
 from sentinel.core.models import PolicyResult
 
 

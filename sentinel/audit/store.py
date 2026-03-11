@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any
 
 import aiosqlite
@@ -179,10 +179,15 @@ class AuditStore:
         ) as cur:
             block_rows = await cur.fetchall()
 
+        total = int(row["total"]) if row is not None and row["total"] is not None else 0
+        passes = int(row["passes"]) if row is not None and row["passes"] is not None else 0
+        blocks = int(row["blocks"]) if row is not None and row["blocks"] is not None else 0
+        modifies = int(row["modifies"]) if row is not None and row["modifies"] is not None else 0
+
         return AuditSummary(
-            total_calls=row["total"] or 0,
-            passes=row["passes"] or 0,
-            blocks=row["blocks"] or 0,
-            modifies=row["modifies"] or 0,
+            total_calls=total,
+            passes=passes,
+            blocks=blocks,
+            modifies=modifies,
             top_blocked_tools=[(r["tool_name"], r["cnt"]) for r in block_rows],
         )

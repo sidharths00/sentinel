@@ -1,8 +1,8 @@
 # tests/test_audit_store.py
-import pytest
-import pytest_asyncio
-from datetime import datetime, timezone, timedelta
 import uuid
+from datetime import datetime, timedelta, timezone
+
+import pytest
 
 
 @pytest.fixture

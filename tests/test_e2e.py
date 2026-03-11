@@ -3,7 +3,6 @@
 End-to-end tests: executive assistant scenario.
 Uses no real API calls — semantic_check=False on all tools.
 """
-import pytest
 import json
 from unittest.mock import MagicMock
 
@@ -150,8 +149,8 @@ async def test_e2e_dispatcher_pass_and_block(tmp_path):
     import sentinel
     sentinel.configure(db_path=str(tmp_path / "test.db"))
 
-    from sentinel.integrations.anthropic import SentinelToolDispatcher
     from sentinel.core.models import PolicyDefinition
+    from sentinel.integrations.anthropic import SentinelToolDispatcher
 
     def send_email(to: str, subject: str, body: str) -> dict:
         """Send an email."""

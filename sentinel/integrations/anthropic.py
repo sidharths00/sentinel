@@ -3,7 +3,8 @@ from __future__ import annotations
 
 import inspect
 import json
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from sentinel.core.models import PolicyDefinition, PolicyViolation
 from sentinel.core.wrapper import policy as sentinel_policy

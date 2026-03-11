@@ -105,7 +105,8 @@ class RuleEngine:
             max_r = constraints["max_recipients"]
             # Check list fields
             for k, v in params.items():
-                if isinstance(v, list) and k.lower() in {"to", "cc", "bcc", "recipients", "attendees"}:
+                list_fields = {"to", "cc", "bcc", "recipients", "attendees"}
+                if isinstance(v, list) and k.lower() in list_fields:
                     if not self.check_count_limit(v, max_r):
                         checks_failed.append("max_recipients")
                         break

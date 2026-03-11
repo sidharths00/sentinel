@@ -50,8 +50,9 @@ def test_policy_violation_fields():
 
 
 def test_audit_entry_fields():
+    from datetime import datetime
+
     from sentinel.core.models import AuditEntry
-    from datetime import datetime, timezone
     entry = AuditEntry(
         agent_id="agent-1",
         tool_name="send_email",

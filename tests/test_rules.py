@@ -1,5 +1,4 @@
 # tests/test_rules.py
-import pytest
 from sentinel.core.rules import RuleEngine
 
 

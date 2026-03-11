@@ -4,7 +4,8 @@ from __future__ import annotations
 import asyncio
 import functools
 import inspect
-from typing import Any, Callable, Literal
+from collections.abc import Callable
+from typing import Any, Literal
 
 from sentinel.core.models import PolicyDefinition, PolicyViolation
 
@@ -57,18 +58,28 @@ class PolicyWrapper:
                     if loop.is_running():
                         import concurrent.futures
                         with concurrent.futures.ThreadPoolExecutor() as pool:
-                            future = pool.submit(
-                                asyncio.run,
-                                _run(tool_name, policy, params, func, args, kwargs, agent_id, task_id, log_level, self._get_config)
+                            coro = _run(
+                                tool_name, policy, params, func,
+                                args, kwargs, agent_id, task_id, log_level,
+                                self._get_config,
                             )
+                            future = pool.submit(asyncio.run, coro)
                             return future.result()
                     else:
                         return loop.run_until_complete(
-                            _run(tool_name, policy, params, func, args, kwargs, agent_id, task_id, log_level, self._get_config)
+                            _run(
+                                tool_name, policy, params, func,
+                                args, kwargs, agent_id, task_id, log_level,
+                                self._get_config,
+                            )
                         )
                 except RuntimeError:
                     return asyncio.run(
-                        _run(tool_name, policy, params, func, args, kwargs, agent_id, task_id, log_level, self._get_config)
+                        _run(
+                            tool_name, policy, params, func,
+                            args, kwargs, agent_id, task_id, log_level,
+                            self._get_config,
+                        )
                     )
 
             @functools.wraps(func)
@@ -77,7 +88,11 @@ class PolicyWrapper:
                 bound = sig.bind(*args, **kwargs)
                 bound.apply_defaults()
                 params = dict(bound.arguments)
-                return await _run(tool_name, policy, params, func, args, kwargs, agent_id, task_id, log_level, self._get_config)
+                return await _run(
+                    tool_name, policy, params, func,
+                    args, kwargs, agent_id, task_id, log_level,
+                    self._get_config,
+                )
 
             if inspect.iscoroutinefunction(func):
                 return async_wrapper

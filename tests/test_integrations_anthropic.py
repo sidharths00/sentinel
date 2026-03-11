@@ -1,7 +1,6 @@
 # tests/test_integrations_anthropic.py
-import pytest
-from unittest.mock import MagicMock
 import json
+from unittest.mock import MagicMock
 
 
 def make_tool_use_block(name: str, input_dict: dict, tool_use_id: str = "tu_123"):
@@ -17,8 +16,8 @@ async def test_dispatcher_dispatches_tool(tmp_path):
     import sentinel
     sentinel.configure(db_path=str(tmp_path / "test.db"))
 
-    from sentinel.integrations.anthropic import SentinelToolDispatcher
     from sentinel.core.models import PolicyDefinition
+    from sentinel.integrations.anthropic import SentinelToolDispatcher
 
     def my_tool(x: int) -> dict:
         return {"result": x * 2}
@@ -46,8 +45,8 @@ async def test_dispatcher_returns_block_result(tmp_path):
     import sentinel
     sentinel.configure(db_path=str(tmp_path / "test.db"))
 
-    from sentinel.integrations.anthropic import SentinelToolDispatcher
     from sentinel.core.models import PolicyDefinition
+    from sentinel.integrations.anthropic import SentinelToolDispatcher
 
     def send_email(to: str, body: str) -> dict:
         return {"status": "sent"}
@@ -76,8 +75,8 @@ async def test_dispatcher_dispatch_all(tmp_path):
     import sentinel
     sentinel.configure(db_path=str(tmp_path / "test.db"))
 
-    from sentinel.integrations.anthropic import SentinelToolDispatcher
     from sentinel.core.models import PolicyDefinition
+    from sentinel.integrations.anthropic import SentinelToolDispatcher
 
     def tool_a(x: int) -> dict:
         return {"a": x}
@@ -86,8 +85,12 @@ async def test_dispatcher_dispatch_all(tmp_path):
         return {"b": y}
 
     policies = {
-        "tool_a": PolicyDefinition(intent="compute", risk_level="low", action_type="reversible", semantic_check=False),
-        "tool_b": PolicyDefinition(intent="log", risk_level="low", action_type="reversible", semantic_check=False),
+        "tool_a": PolicyDefinition(
+            intent="compute", risk_level="low", action_type="reversible", semantic_check=False
+        ),
+        "tool_b": PolicyDefinition(
+            intent="log", risk_level="low", action_type="reversible", semantic_check=False
+        ),
     }
 
     dispatcher = SentinelToolDispatcher(
@@ -108,8 +111,8 @@ async def test_dispatcher_dispatch_all(tmp_path):
 
 
 def test_tool_schemas_generated(tmp_path):
-    from sentinel.integrations.anthropic import SentinelToolDispatcher
     from sentinel.core.models import PolicyDefinition
+    from sentinel.integrations.anthropic import SentinelToolDispatcher
 
     def send_email(to: str, subject: str, body: str) -> dict:
         """Send an email."""
