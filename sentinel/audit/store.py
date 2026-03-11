@@ -65,7 +65,8 @@ class AuditStore:
             await self._conn.close()
 
     async def write(self, entry: AuditEntry) -> None:
-        assert self._conn, "Store not initialized"
+        if self._conn is None:
+            raise RuntimeError("AuditStore not initialized — call await store.initialize() first")
         await self._conn.execute(
             """INSERT INTO audit_entries
                (id, timestamp, agent_id, tool_name, action_type, risk_level, intent,
@@ -97,7 +98,8 @@ class AuditStore:
         limit: int = 100,
         since: datetime | None = None,
     ) -> list[AuditEntry]:
-        assert self._conn
+        if self._conn is None:
+            raise RuntimeError("AuditStore not initialized — call await store.initialize() first")
         clauses: list[str] = []
         args: list[Any] = []
         if agent_id:
@@ -119,7 +121,8 @@ class AuditStore:
         agent_id: str | None = None,
         since: datetime | None = None,
     ) -> list[AuditEntry]:
-        assert self._conn
+        if self._conn is None:
+            raise RuntimeError("AuditStore not initialized — call await store.initialize() first")
         clauses = ["outcome = 'block'"]
         args: list[Any] = []
         if agent_id:
@@ -136,7 +139,8 @@ class AuditStore:
         return [_row_to_entry(r) for r in rows]
 
     async def get_by_task(self, task_id: str) -> list[AuditEntry]:
-        assert self._conn
+        if self._conn is None:
+            raise RuntimeError("AuditStore not initialized — call await store.initialize() first")
         async with self._conn.execute(
             "SELECT * FROM audit_entries WHERE task_id = ? ORDER BY timestamp DESC",
             (task_id,),
@@ -147,7 +151,8 @@ class AuditStore:
     async def get_summary(
         self, agent_id: str | None = None, since: datetime | None = None
     ) -> AuditSummary:
-        assert self._conn
+        if self._conn is None:
+            raise RuntimeError("AuditStore not initialized — call await store.initialize() first")
         clauses: list[str] = []
         args: list[Any] = []
         if agent_id:

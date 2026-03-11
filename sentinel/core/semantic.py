@@ -55,11 +55,18 @@ class AnthropicSemanticChecker:
             params=json.dumps(params, default=str),
         )
         try:
+            import asyncio
+
             client = self._get_client()
-            message = client.messages.create(
-                model=self.model,
-                max_tokens=256,
-                messages=[{"role": "user", "content": prompt}],
+            loop = asyncio.get_event_loop()
+            # Run sync Anthropic client in a thread to avoid blocking the event loop
+            message = await loop.run_in_executor(
+                None,
+                lambda: client.messages.create(
+                    model=self.model,
+                    max_tokens=256,
+                    messages=[{"role": "user", "content": prompt}],
+                ),
             )
             text = message.content[0].text.strip()
             # Extract JSON — handle markdown code blocks

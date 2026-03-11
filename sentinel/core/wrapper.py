@@ -131,14 +131,13 @@ async def _run(
         )
 
         if policy.on_block == "log_only":
-            # Execute anyway, log as pass
-            from sentinel.core.models import PolicyResult
-            log_outcome = PolicyResult(
-                outcome="pass",
-                checks_run=result.checks_run,
-                checks_failed=result.checks_failed,
-                reason="log_only mode: executed despite violation",
-            )
+            # Execute anyway, but log the actual block outcome so violations remain visible
+            # in get_blocks() and get_summary(). outcome="block" is preserved; the
+            # execution_result field confirms the call was allowed through.
+            if inspect.iscoroutinefunction(func):
+                execution_result = await func(*args, **kwargs)
+            else:
+                execution_result = func(*args, **kwargs)
             if log_level != "none":
                 await cfg.logger.log(
                     agent_id=effective_agent_id,
@@ -147,13 +146,14 @@ async def _run(
                     risk_level=policy.risk_level,
                     intent=policy.intent,
                     params=params,
-                    policy_result=log_outcome,
+                    policy_result=result,
+                    execution_result=(
+                        execution_result if isinstance(execution_result, dict) else None
+                    ),
                     task_id=task_id,
                     log_level=log_level,
                 )
-            if inspect.iscoroutinefunction(func):
-                return await func(*args, **kwargs)
-            return func(*args, **kwargs)
+            return execution_result
 
         if log_level != "none":
             await cfg.logger.log(
