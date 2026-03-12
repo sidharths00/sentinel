@@ -70,11 +70,10 @@ result = send_email(
     body="Here is the password: hunter2",
 )
 # result == PolicyViolation(
-#     outcome="block",
-#     rule="blocked_keywords",
-#     message="Parameter 'body' contains blocked keyword: 'password'",
 #     tool_name="send_email",
-#     params={...},
+#     reason="Failed checks: keyword_blocklist",
+#     suggestion="Review constraints for send_email: ['keyword_blocklist']",
+#     what_happened="Failed checks: keyword_blocklist",
 # )
 ```
 
@@ -175,31 +174,38 @@ def create_calendar_event(title: str, start: str, end: str, calendar: str) -> di
 sentinel.configure(default_agent_id="executive-assistant")
 
 # 3. Build the dispatcher and client
-dispatcher = SentinelToolDispatcher(tools=[send_email, create_calendar_event])
+dispatcher = SentinelToolDispatcher(
+    tools={"send_email": send_email, "create_calendar_event": create_calendar_event},
+)
 client = anthropic.Anthropic()
 
 # 4. Run the agentic loop
+import asyncio
+
 messages = [{"role": "user", "content": "Schedule a 1-hour sync with the team tomorrow."}]
 
-while True:
-    response = client.messages.create(
-        model="claude-opus-4-6",
-        max_tokens=1024,
-        tools=dispatcher.tool_schemas,
-        messages=messages,
-    )
+async def run():
+    while True:
+        response = client.messages.create(
+            model="claude-opus-4-6",
+            max_tokens=1024,
+            tools=dispatcher.tool_schemas,
+            messages=messages,
+        )
 
-    if response.stop_reason == "end_turn":
-        print(response.content[0].text)
-        break
+        if response.stop_reason == "end_turn":
+            print(response.content[0].text)
+            break
 
-    if response.stop_reason == "tool_use":
-        # Sentinel intercepts here — evaluates policy before any tool executes
-        tool_results = dispatcher.dispatch(response.content)
+        if response.stop_reason == "tool_use":
+            # Sentinel intercepts here — evaluates policy before any tool executes
+            tool_results = await dispatcher.dispatch_all(response.content)
 
-        messages.append({"role": "assistant", "content": response.content})
-        messages.append({"role": "user", "content": tool_results})
-        # loop continues — blocked calls return PolicyViolation as tool result
+            messages.append({"role": "assistant", "content": response.content})
+            messages.append({"role": "user", "content": tool_results})
+            # loop continues — blocked calls return PolicyViolation as tool result
+
+asyncio.run(run())
 ```
 
 When a tool call is blocked, the `PolicyViolation` is returned as the tool result. The model sees the violation reason and can adjust its behavior or report back to the user.
