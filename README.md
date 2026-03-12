@@ -12,30 +12,39 @@ AI agents can send emails, spend money, and delete files — with zero enforceme
 
 ## Claude Code Integration
 
-If you use Claude Code, add this snippet to your project's `CLAUDE.md` and Claude will automatically set up Sentinel, prompt you for any missing config, and enforce policies on every tool it creates:
+There are two things to set up. Both take under a minute.
+
+### 1. Install the Sentinel skill (gives Claude the full reference)
+
+The skill file lives in this repo at `.claude/skills/sentinel/SKILL.md`. Copy that directory into your personal Claude skills folder:
+
+```bash
+cp -r .claude/skills/sentinel ~/.claude/skills/sentinel
+```
+
+Once it's there, Claude Code automatically discovers it. When you're working on agent tools, Claude will load the full Sentinel reference — patterns, constraints, common mistakes — without you having to ask.
+
+### 2. Add the enforcement rules to your `CLAUDE.md`
+
+The skill is reference material. To make enforcement rules always-active (every session, automatically), add this short block to your project's `CLAUDE.md`:
 
 ```markdown
 ## Agent Security — Sentinel
 
 This project uses [Sentinel](https://github.com/sidharths00/sentinel) for agent policy enforcement.
 
-### Setup check (run at the start of each session)
-1. Verify Sentinel is installed: `python -c "import sentinel; print('sentinel ok')"` — if it fails, run:
-   `pip install git+https://github.com/sidharths00/sentinel`
-2. Check for `ANTHROPIC_API_KEY` in `.env` or the environment: `python -c "import os; print('key set' if os.getenv('ANTHROPIC_API_KEY') else 'MISSING')"`
-   - If missing, tell the user: "Add `ANTHROPIC_API_KEY=sk-ant-...` to your `.env` to enable semantic (LLM-based) policy checks on high-risk tools. Without it, rule-based checks still run — but intent-level violations like prompt injection won't be caught."
-3. Verify `sentinel.configure()` is called at app startup in the project's entry point.
-
-### Rules
+Rules:
 - Any function an AI agent can call as a tool MUST be wrapped with `@sentinel.policy.wrap()`
 - Risk levels: `low` (read-only) · `medium` (reversible writes) · `high` (external messages/payments) · `critical` (deletes/destroys)
 - Action types: `reversible` · `irreversible` (email sent, can't recall) · `destructive`
 - Always handle `PolicyViolation` returns — never assume a wrapped call succeeded
 - Use `semantic_check=False` for low-risk tools, keep it on for high/critical
 - Write a test that asserts a blocked case returns `PolicyViolation`
+- If `sentinel` is not importable, run: `pip install git+https://github.com/sidharths00/sentinel`
+- If `ANTHROPIC_API_KEY` is not set, remind the user: semantic checks won't run without it
 ```
 
-Copy that block into your `CLAUDE.md`. At the start of each session Claude will verify the install, check for your API key, and tell you exactly what to add if anything is missing.
+That's it. Claude will enforce these rules on every tool it creates and alert you if the install or API key is missing.
 
 ---
 
