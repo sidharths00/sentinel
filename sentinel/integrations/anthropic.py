@@ -11,23 +11,56 @@ from sentinel.core.wrapper import policy as sentinel_policy
 
 
 def _infer_schema(func: Callable[..., Any]) -> dict[str, Any]:
-    """Generate a basic JSON schema from function signature type hints."""
+    """Generate a JSON schema from function signature type hints.
+
+    Handles plain types, generic aliases (list[str], dict[str, Any]),
+    and Optional (X | None / Union[X, None]).
+    """
+    import types
+    import typing
+
     sig = inspect.signature(func)
-    type_map: dict[type, str] = {
-        str: "string",
-        int: "integer",
-        float: "number",
-        bool: "boolean",
-        list: "array",
-        dict: "object",
-    }
+    hints = typing.get_type_hints(func)
+
+    def _resolve(ann: Any) -> dict[str, Any]:
+        # Unwrap Optional / X | None
+        origin = typing.get_origin(ann)
+        args = typing.get_args(ann)
+
+        if origin is typing.Union or (hasattr(types, "UnionType") and origin is types.UnionType):  # noqa: E501
+            # Filter out NoneType to get the inner type
+            non_none = [a for a in args if a is not type(None)]
+            if len(non_none) == 1:
+                return _resolve(non_none[0])
+            return {"type": "string"}  # complex union → fallback
+
+        type_map: dict[Any, str] = {
+            str: "string",
+            int: "integer",
+            float: "number",
+            bool: "boolean",
+        }
+        if ann in type_map:
+            return {"type": type_map[ann]}
+
+        if origin is list or ann is list:
+            item_schema = _resolve(args[0]) if args else {"type": "string"}
+            return {"type": "array", "items": item_schema}
+
+        if origin is dict or ann is dict:
+            return {"type": "object"}
+
+        return {"type": "string"}  # fallback
+
     properties: dict[str, Any] = {}
     required: list[str] = []
 
     for name, param in sig.parameters.items():
-        ann = param.annotation
-        json_type = type_map.get(ann, "string")
-        properties[name] = {"type": json_type}
+        ann = hints.get(name, param.annotation)
+        if ann is inspect.Parameter.empty:
+            properties[name] = {"type": "string"}
+        else:
+            properties[name] = _resolve(ann)
         if param.default is inspect.Parameter.empty:
             required.append(name)
 

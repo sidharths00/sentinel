@@ -1,6 +1,7 @@
 # sentinel/config.py
 from __future__ import annotations
 
+import asyncio
 import os
 from collections.abc import Callable, Coroutine
 from typing import Any
@@ -30,6 +31,7 @@ class SentinelConfig:
         self._logger: Any = None
         self._engine: Any = None
         self._initialized = False
+        self._lock: asyncio.Lock = asyncio.Lock()
 
     def _get_default_semantic_checker(self) -> SemanticChecker | None:
         api_key = os.getenv("ANTHROPIC_API_KEY")
@@ -37,6 +39,7 @@ class SentinelConfig:
             return None
         try:
             from sentinel.core.semantic import AnthropicSemanticChecker, CachedSemanticChecker
+
             checker = AnthropicSemanticChecker(api_key=api_key)
             cached = CachedSemanticChecker(checker.check)
             return cached.check
@@ -46,19 +49,22 @@ class SentinelConfig:
     async def _ensure_initialized(self) -> None:
         if self._initialized:
             return
-        from sentinel.audit.logger import AuditLogger
-        from sentinel.audit.store import AuditStore
-        from sentinel.core.engine import PolicyEngine
+        async with self._lock:
+            if self._initialized:  # double-checked locking
+                return
+            from sentinel.audit.logger import AuditLogger
+            from sentinel.audit.store import AuditStore
+            from sentinel.core.engine import PolicyEngine
 
-        self._store = AuditStore(db_path=self.db_path)
-        await self._store.initialize()
-        self._logger = AuditLogger(store=self._store)
-        self._engine = PolicyEngine()
+            self._store = AuditStore(db_path=self.db_path)
+            await self._store.initialize()
+            self._logger = AuditLogger(store=self._store)
+            self._engine = PolicyEngine()
 
-        if self.semantic_checker is None:
-            self.semantic_checker = self._get_default_semantic_checker()
+            if self.semantic_checker is None:
+                self.semantic_checker = self._get_default_semantic_checker()
 
-        self._initialized = True
+            self._initialized = True
 
     @property
     def store(self) -> Any:

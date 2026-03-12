@@ -173,14 +173,15 @@ class AuditStore:
         ) as cur:
             row = await cur.fetchone()
 
-        # For the top_blocked_tools query, need to re-apply same WHERE but add outcome filter
-        block_clauses = list(clauses) + ["outcome='block'"]
-        block_where = f"WHERE {' AND '.join(block_clauses)}" if block_clauses else ""
+        # top_blocked_tools: same filters but restricted to outcome='block'
+        block_clauses = list(clauses) + ["outcome = ?"]
+        block_args = list(args) + ["block"]
+        block_where = f"WHERE {' AND '.join(block_clauses)}"
         async with self._conn.execute(
             f"SELECT tool_name, COUNT(*) as cnt FROM audit_entries "
             f"{block_where} "
             f"GROUP BY tool_name ORDER BY cnt DESC LIMIT 10",
-            args,
+            block_args,
         ) as cur:
             block_rows = await cur.fetchall()
 

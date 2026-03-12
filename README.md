@@ -10,16 +10,24 @@ When an agent invokes a tool, Sentinel intercepts the call before execution and 
 
 ---
 
+> **Status: Alpha (v0.1.0)** — API is stable for experimentation and personal projects. Not yet recommended for production systems without review.
+
 ## Installation
 
 ```bash
-uv pip install sentinel
+pip install git+https://github.com/sidharths00/sentinel
+```
+
+With Anthropic semantic checks:
+
+```bash
+pip install "sentinel[anthropic] @ git+https://github.com/sidharths00/sentinel"
 ```
 
 For development:
 
 ```bash
-git clone <repo>
+git clone https://github.com/sidharths00/sentinel
 cd sentinel
 uv sync --extra dev
 ```
