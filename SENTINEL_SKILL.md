@@ -1,5 +1,36 @@
 # Sentinel Skill — Instrument Any Python Agent with Policy Enforcement
 
+## Setup Check (run at the start of every session)
+
+Before writing or modifying any Sentinel-instrumented code, verify the environment is ready:
+
+**Step 1 — Confirm Sentinel is installed:**
+```bash
+python -c "import sentinel; print('sentinel ok')"
+```
+If this fails, install it:
+```bash
+pip install git+https://github.com/sidharths00/sentinel
+```
+
+**Step 2 — Check for `ANTHROPIC_API_KEY`:**
+```bash
+python -c "import os; print('key set' if os.getenv('ANTHROPIC_API_KEY') else 'MISSING')"
+```
+If missing, tell the user:
+
+> "Your Sentinel setup is missing `ANTHROPIC_API_KEY`. Without it, rule-based checks (keyword blocklists, domain allowlists, count limits) will still run — but semantic intent checks won't activate. To enable full enforcement on high-risk tools, add this to your `.env`:
+> ```
+> ANTHROPIC_API_KEY=sk-ant-...
+> ```
+> You can get a key at https://console.anthropic.com. This is optional — Sentinel works without it."
+
+**Step 3 — Verify `sentinel.configure()` is called at startup:**
+
+Check the project's entry point (e.g., `main.py`, `app.py`, the FastAPI lifespan) for a call to `sentinel.configure(db_path=..., default_agent_id=...)`. If it's missing, add it before any tool calls.
+
+---
+
 ## What Sentinel Does
 
 Sentinel is a policy enforcement layer for AI agent tool calls. Wrap any Python function with `@sentinel.policy.wrap()` and every invocation is automatically:

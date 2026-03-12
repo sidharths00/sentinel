@@ -12,15 +12,21 @@ AI agents can send emails, spend money, and delete files — with zero enforceme
 
 ## Claude Code Integration
 
-If you use Claude Code, add this snippet to your project's `CLAUDE.md` and Claude will automatically apply Sentinel to every tool it creates:
+If you use Claude Code, add this snippet to your project's `CLAUDE.md` and Claude will automatically set up Sentinel, prompt you for any missing config, and enforce policies on every tool it creates:
 
 ```markdown
 ## Agent Security — Sentinel
 
 This project uses [Sentinel](https://github.com/sidharths00/sentinel) for agent policy enforcement.
-Install: `pip install git+https://github.com/sidharths00/sentinel`
 
-Rules:
+### Setup check (run at the start of each session)
+1. Verify Sentinel is installed: `python -c "import sentinel; print('sentinel ok')"` — if it fails, run:
+   `pip install git+https://github.com/sidharths00/sentinel`
+2. Check for `ANTHROPIC_API_KEY` in `.env` or the environment: `python -c "import os; print('key set' if os.getenv('ANTHROPIC_API_KEY') else 'MISSING')"`
+   - If missing, tell the user: "Add `ANTHROPIC_API_KEY=sk-ant-...` to your `.env` to enable semantic (LLM-based) policy checks on high-risk tools. Without it, rule-based checks still run — but intent-level violations like prompt injection won't be caught."
+3. Verify `sentinel.configure()` is called at app startup in the project's entry point.
+
+### Rules
 - Any function an AI agent can call as a tool MUST be wrapped with `@sentinel.policy.wrap()`
 - Risk levels: `low` (read-only) · `medium` (reversible writes) · `high` (external messages/payments) · `critical` (deletes/destroys)
 - Action types: `reversible` · `irreversible` (email sent, can't recall) · `destructive`
@@ -29,7 +35,7 @@ Rules:
 - Write a test that asserts a blocked case returns `PolicyViolation`
 ```
 
-Copy that block into your `CLAUDE.md`. That's it. Claude will wrap every agent tool with Sentinel going forward.
+Copy that block into your `CLAUDE.md`. At the start of each session Claude will verify the install, check for your API key, and tell you exactly what to add if anything is missing.
 
 ---
 
